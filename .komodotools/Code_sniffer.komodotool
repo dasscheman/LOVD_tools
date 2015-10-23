@@ -1,0 +1,18 @@
+{
+  "insertOutput": 0, 
+  "parseRegex": "[sourcecode lang=\u201dtext\u201d][/sourcecode]", 
+  "doNotOpenOutputWindow": 0, 
+  "keyboard_shortcut": "", 
+  "name": "Code sniffer", 
+  "operateOnSelection": 0, 
+  "value": [
+    "/home/dasscheman/www/svn/LOVD_tools/yii2-coding-standards-master/vendor/bin/phpcs -n --standard=%(ask:Which Standard do you wish to use?:Yii2) --report=emacs %F"
+  ], 
+  "cwd": "/home/dasscheman/bin/vendor/bin", 
+  "version": "1.0.12", 
+  "env": "", 
+  "showParsedOutputList": 0, 
+  "type": "command", 
+  "parseOutput": 1, 
+  "runIn": "command-output-window"
+}
