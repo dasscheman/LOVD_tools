@@ -8,9 +8,6 @@ use yii\bootstrap\Nav;
 use yii\bootstrap\NavBar;
 use yii\widgets\Breadcrumbs;
 use app\assets\AppAsset;
-use app\models\LovdConnectionForm;
-
-$LovdConnection = new \app\models\LovdConnectionForm;
 
 AppAsset::register($this);
 ?>
@@ -36,18 +33,23 @@ AppAsset::register($this);
             'class' => 'navbar-inverse navbar-fixed-top',
         ],
     ]);
+
     echo Nav::widget([
         'options' => ['class' => 'navbar-nav navbar-right'],
         'items' => [
             ['label' => 'Home', 'url' => ['/site/index']],
             ['label' => 'About', 'url' => ['/site/about']],
             ['label' => 'Contact', 'url' => ['/site/contact']],
-            $LovdConnection->isConnected ?
-                ['label' => 'Connect', 'url' => ['/lovd-connection/connect']] :
+
+            Yii::$app->lovdConnection->isAvailable ?
                 [
-                    'label' => 'Dicsonnectt ("Host: "' . $LovdConnection->isConnected . '" Database: "'. $LovdConnection->isConnected . ')',
+                    'label' => 'Disonnect (Host: ' . Yii::$app->lovdConnection->host . ' Database: '. Yii::$app->lovdConnection->database . ')',
                     'url' => ['/lovd-connection/disconnect'],
                     'linkOptions' => ['data-method' => 'post']
+                ]:
+                [
+                    'label' => 'Connect',
+                    'url' => ['/lovd-connection/connect'],
                 ],
             Yii::$app->user->isGuest ?
                 ['label' => 'Login', 'url' => ['/site/login']] :

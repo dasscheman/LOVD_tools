@@ -55,11 +55,16 @@ class LovdConnectionController extends Controller
 
     public function actionConnect()
     {
-        if (!\Yii::$app->user->isGuest) {
+        $model = new LovdConnectionForm();
+
+    var_dump(Yii::$app); exit;
+        if (Yii::$app->lovdConnection->isAvailable) {
             return $this->goHome();
         }
 
-        $model = new LovdConnectionForm();
+
+
+
         if ($model->load(Yii::$app->request->post()) && $model->connect()) {
             return $this->goBack();
         }

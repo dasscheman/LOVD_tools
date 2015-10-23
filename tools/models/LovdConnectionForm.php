@@ -15,6 +15,7 @@ class LovdConnectionForm extends Model
     public $username;
     public $password;
     public $rememberMe = false;
+    public $isAvailable = false;
 
     private $_lovdDatabaseConnection;
     private $_user = false;
@@ -27,53 +28,43 @@ class LovdConnectionForm extends Model
     {
         return [
             // username and password are both required
-            [['username', 'password'], 'required'],
+            [['host', 'database', 'username', 'password'], 'required'],
             // rememberMe must be a boolean value
             ['rememberMe', 'boolean'],
-            // password is validated by validatePassword()
-            ['password', 'validatePassword'],
         ];
     }
 
     /**
-     * Validates the password.
-     * This method serves as the inline validation for password.
-     *
-     * @param string $attribute the attribute currently being validated
-     * @param array $params the additional name-value pairs given in the rule
-     */
-    public function validatePassword($attribute, $params)
-    {
-        if (!$this->hasErrors()) {
-            $user = $this->getUser();
-
-            if (!$user || !$user->validatePassword($this->password)) {
-                $this->addError($attribute, 'Incorrect username or password.');
-            }
-        }
-    }
-
-    /**
-     * Logs in a user using the provided username and password.
-     * @return boolean whether the user is logged in successfully
+     * Connects to the LOVD database.
+     * @return boolean whether connected successfully.
      */
     public function connect()
     {
-        if ($this->validate()) {
-            return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600*24*30 : 0);
-        }
-        return false;
+        $this->_lovdDatabaseConnection = new \yii\db\Connection([
+            'dsn' => 'mysql:host=' . $this->host . ';dbname=' . $this->database,
+            'username' => $this->username,
+            'password' => $this->password,
+            'charset' => 'utf8',
+        ]);
+        $this->_lovdDatabaseConnection->open();
+        Yii::$app->lovdConnection->host =  $this->host;
+        Yii::$app->lovdConnection->database =  $this->database;
+        Yii::$app->lovdConnection->username =  $this->username;
+        Yii::$app->lovdConnection->password =  $this->password;
+        Yii::$app->lovdConnection->isAvailable =  true;
     }
 
     /**
-     * Logs in a user using the provided username and password.
-     * @return boolean whether the user is logged in successfully
+     * Disonnects from the LOVD database.
+     * @return boolean whether disconnected successfully.
      */
-    public function connect()
+    public function disconnect()
     {
-        if ($this->validate()) {
-            return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600*24*30 : 0);
-        }
-        return false;
+        $this->_lovdDatabaseConnection->close();
+        Yii::$app->lovdConnection->host =  '';
+        Yii::$app->lovdConnection->database =  '';
+        Yii::$app->lovdConnection->username =  '';
+        Yii::$app->lovdConnection->password =  '';
+        Yii::$app->lovdConnection->isAvailable =  false;
     }
 }
