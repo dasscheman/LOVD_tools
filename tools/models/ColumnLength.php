@@ -16,6 +16,7 @@ class ColumnLength extends LovdConnection
     public $table;
     public $columns;
     public $diffLength = 20;
+    public $margin = 10;
     public $select;
 
     /**
@@ -30,7 +31,7 @@ class ColumnLength extends LovdConnection
             [['rememberMe', 'select'], 'boolean'],
 	    [['table','columns'], 'string'],
 	    //['columns', 'array'],
-	    ['diffLength', 'integer'],
+	    [['diffLength', 'margin'], 'integer'],
         ];
     }
 
@@ -56,6 +57,14 @@ class ColumnLength extends LovdConnection
     public function setDiffLength($diffLength)
     {
 	$this->diffLength = $diffLength;
+    }
+
+    /**
+     * set the margin
+     **/
+    public function setmargin($margin)
+    {
+	$this->margin = $margin;
     }
 
     /**
@@ -86,6 +95,27 @@ class ColumnLength extends LovdConnection
         $data = $query->queryColumn();
         $this->disconnect();
         return $data;
+    }
+
+    /**
+     * Alter the columns of $this->column
+     * @returns nothing
+     **/
+    public function alterColumns()
+    {
+        $this->connect();
+        $reservedLength = $this->getReservedColumnLength();
+        $maxLength = $this->getMaxFieldLengthPerColumn();
+        $diffData = $this->getDifColumnLength($reservedLength, $maxLength);
+
+        foreach ($diffData as $key=>$record){
+            $type = 'varchar(' . $record['new_length'] . ')';
+            $column = $key;
+            $query = $this->alterColumn($column, $type);
+            $query->query();
+        }
+
+        $this->disconnect();
     }
 
     /**
@@ -146,14 +176,16 @@ class ColumnLength extends LovdConnection
 	$query = $this->createCommand(
 		"SELECT DATA_LENGTH AS data_length,
 		    MAX_DATA_LENGTH AS max_data_length,
-		    DATA_FREE AS data_free
+		    DATA_FREE AS data_free,
+		    AVG_ROW_LENGTH AS average_row_length
 		FROM TABLES
 		WHERE TABLE_NAME LIKE '" . $this->table . "'
 		AND TABLE_SCHEMA ='" . $db_name . "'
 		LIMIT 0 , 1");
 	if (isset($query->queryAll()[0])) {
-	    $data[$this->table] = $query->queryAll()[0];
+	    $data[$this->table] = $query->queryOne();
 	}
+        $data[$this->table]['calculated'] = $this->getTableSizeInfo()['SIZE'];
 
         $this->disconnectInformationDb();
 	$provider = new ArrayDataProvider([
@@ -161,11 +193,40 @@ class ColumnLength extends LovdConnection
 	    'pagination' => [
 		'pageSize' => 50,
 	    ],
-	    /*'sort' => [
-		'attributes' => ['data_length', 'max_data_length', 'data_free'],
-	    ],*/
 	]);
 	return $provider;
+    }
+
+    public function getTableSizeInfo()
+    {
+	$db_name = $this->getDatabaseName();
+        $this->connectInformationDb();
+	$data = '';
+	$query = $this->createCommand(
+	    "SELECT
+		SUM(DATA_TYPE)+
+		SUM(DATA_TYPE IN ('varchar', 'text', 'decimal'))+
+		SUM(DATA_TYPE IN ('text'))*12+
+		SUM(DATA_TYPE IN ('tinyint'))+
+		SUM(DATA_TYPE IN ('smallint'))*2+
+		SUM(DATA_TYPE IN ('mediumint'))*3+
+		SUM(DATA_TYPE IN ('int'))*4+
+		SUM(DATA_TYPE IN ('datetime'))*8+
+		SUM(DATA_TYPE IN ('varchar'))+
+		SUM(CHARACTER_OCTET_LENGTH)+
+		SUM(DATA_TYPE IN ('decimal'))
+	    AS SIZE
+	    FROM COLUMNS
+	    WHERE TABLE_SCHEMA = '" . $db_name . "'
+	    AND TABLE_NAME  = '" . $this->table . "'");
+
+	if (isset($query->queryAll()[0])) {
+	    $data = $query->queryOne();
+	}
+
+        $this->disconnectInformationDb();
+
+	return $data;
     }
 
     /**
@@ -177,27 +238,48 @@ class ColumnLength extends LovdConnection
      **/
     public function getDifColumnLength($reservedFieldLength, $maxFieldLength)
     {
-	$data = '';
+	$data = array();
         foreach ($reservedFieldLength as $key=>$value) {
 	    $diff = $value - $maxFieldLength[$key];
-	    if ($diff > $this->diffLength){
+
+	    $new_length = $maxFieldLength[$key] + $this->margin;
+	    if ($new_length < $maxFieldLength[$key]){
+		// The new length my never by smaller than the current max lenght,
+		// because than we are going to delete data!!
+		continue;
+	    }
+
+	    $saved_length = $value - $new_length;
+	    if (abs($saved_length) < $this->diffLength){
+		// If the difference is to small were are not interested to change is.
+		continue;
+	    }
+
 		$data[$key] =
 		    [
 			'column_name'=>$key,
 			'reserved'=>$value,
 			'max'=>$maxFieldLength[$key],
 			'dif'=>$diff,
+			'new_length'=>$new_length,
+			'saved_length'=>$saved_length,
 		    ];
-	    }
+
 	}
 
+	return $data;
+    }
+
+    public function getDataProviderFormat($data)
+    {
+	$provider = array();
 	$provider = new ArrayDataProvider([
 	    'allModels' => $data,
 	    'pagination' => [
 		'pageSize' => 50,
 	    ],
 	    'sort' => [
-		'attributes' => ['column_name', 'reserved', 'max', 'dif'],
+		'attributes' => ['column_name', 'reserved', 'max', 'dif', 'new_length', 'saved_length'],
 	    ],
 	]);
 	return $provider;

@@ -16,38 +16,53 @@ $this->params['breadcrumbs'][] = $this->title;
 <div class="lovd_phenotype-get-length">
     <h1><?= Html::encode($this->title) ?></h1>
 
-    <p>Please fill out the following fields to connect to a LOVD database:</p>
+    <p></p>
 
     <?php $form = ActiveForm::begin([
         'id' => 'analys-length-form',
         'options' => ['class' => 'form-horizontal'],
         'fieldConfig' => [
-            'template' => "{label}\n<div class=\"col-lg-3\">{input}</div>\n<div class=\"col-lg-8\">{error}</div>",
-            'labelOptions' => ['class' => 'col-lg-1 control-label'],
+            'template' => "{label}\n<div class=\"col-lg-4\">{input}</div>\n<div class=\"col-lg-8\">{error}</div>",
+            'labelOptions' => ['class' => 'col-lg-4 control-label'],
         ],
     ]); ?>
-
-        <?= $form->field($model, 'diffLength') ?>
-
         <div class="form-group">
-            <div class="col-lg-offset-1 col-lg-11">
-                <?= Html::submitButton('Submit', ['class' => 'btn btn-primary', 'name' => 'submit-button']) ?>
+            <div class="col-lg-4">
+                <h2>Settings</h2>
+                <h4>WARNING</h4>
+                <p>Changing the order wil default the settiing!</p>
+
+                <p>Changes smaller than <b>'Diff length'</b> are not displayed and can not be modified. <br>
+                The <b>'Margin'</b> is how much characters should be added to the largest field of a column.</p>
+                <?= $form->field($model, 'diffLength') ?>
+                <?= $form->field($model, 'margin') ?>
+                <?= Html::submitButton('Submit settings', ['class' => 'btn btn-primary', 'name' => 'submit-button']) ?>
+
             </div>
         </div>
+    <?php ActiveForm::end(); ?>
 
-        <?= GridView::widget(
-            [
-                'dataProvider' => $tableInfo,
-                //'filterModel' => $searchModel,
-                'columns' =>
-                    [
-                        'data_length',
-                        'max_data_length',
-                        'data_free',
-                    ],
-            ]);
+    <?= GridView::widget(
+        [
+            'dataProvider' => $tableInfo,
+            //'filterModel' => $searchModel,
+            'columns' =>
+                [
+                    'data_length',
+                    'max_data_length',
+                    'data_free',
+                    'average_row_length',
+                    'calculated',
+                ],
+        ]);
 
-        ?>
+    ?>
+    <?=Html::beginForm([
+        '/column-length/alter-columns',
+        'id' => 'analys-length-form',
+        'model' => $model,
+    ]);?>
+    <?=Html::submitButton('Alter Column length', ['class' => 'btn btn-primary', 'name' => 'submit-button' ,]);?>
         <?= GridView::widget(
             [
                 'dataProvider' => $diffData,
@@ -60,11 +75,12 @@ $this->params['breadcrumbs'][] = $this->title;
                         'reserved',
                         'max',
                         'dif',
+                        'new_length',
+                        'saved_length',
                         ['class' => 'yii\grid\ActionColumn'],
                     ],
             ]);
-
         ?>
+    <?= Html::endForm();?>
 
-    <?php ActiveForm::end(); ?>
 </div>

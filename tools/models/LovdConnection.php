@@ -5,7 +5,8 @@ namespace app\models;
 use Yii;
 use yii\base\Model;
 use yii\helpers\ArrayHelper;
-//use yii\db\Query;
+use yii\db\Query;
+use yii\db\QueryBuilder;
 
 /**
  * LoginLovdForm is the model behind the login lovd form.
@@ -14,7 +15,8 @@ class LovdConnection extends Model
 {
     public $databases = array('db' => 'Yii2 basic',
                               'db2' => 'LOVD local',
-                              'db3' => 'LOVD shared');
+                              //'db3' => 'LOVD shared',
+                              );
     public $database_id;
     private $_lovdDatabaseConnection;
 
@@ -110,14 +112,22 @@ class LovdConnection extends Model
     }
 
     /**
-     * Connects to the LOVD database.
-     * @return boolean whether connected successfully.
+     * CreateCommand for currecnt db connection
+     * @return sql statement.
      */
     public function createCommand($query)
     {
         return $this->_lovdDatabaseConnection->createCommand($query);
     }
 
+    /**
+     * Alter column for currecnt db connection
+     * @return sql statement.
+     */
+    public function alterColumn($column, $type)
+    {
+        return $this->_lovdDatabaseConnection->createCommand()->alterColumn( $this->table, $column, $type);
+    }
 
     /**
      * Connects to the LOVD database.

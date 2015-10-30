@@ -7,16 +7,17 @@
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 
-$this->title = 'Connect';
+$this->title = 'Select database';
 $this->params['breadcrumbs'][] = $this->title;
+
 ?>
-<div class="lovd_connect-login">
+<div class="lovd_connect-select">
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>Please fill out the following fields to connect to a LOVD database:</p>
 
 <?php $form = ActiveForm::begin([
-        'id' => 'lovd-connect-form',
+        'id' => 'lovd-select-form',
         'options' => ['class' => 'form-horizontal'],
         'fieldConfig' => [
             'template' => "{label}\n<div class=\"col-lg-3\">{input}</div>\n<div class=\"col-lg-8\">{error}</div>",
@@ -24,21 +25,14 @@ $this->params['breadcrumbs'][] = $this->title;
         ],
     ]); ?>
 
-        <?= $form->field($model, 'host') ?>
-
-        <?= $form->field($model, 'database') ?>
-
-        <?= $form->field($model, 'username') ?>
-
-        <?= $form->field($model, 'password')->passwordInput() ?>
-
-        <?= $form->field($model, 'rememberMe')->checkbox([
-            'template' => "<div class=\"col-lg-offset-1 col-lg-3\">{input} {label}</div>\n<div class=\"col-lg-8\">{error}</div>",
-        ]) ?>
+        <?php
+            echo $form->field($dbmodel, 'database_id')->dropDownList($dbmodel->databases,
+							    ['prompt'=>'Select database']);
+        ?>
 
         <div class="form-group">
             <div class="col-lg-offset-1 col-lg-11">
-                <?= Html::submitButton('Login', ['class' => 'btn btn-primary', 'name' => 'login-button']) ?>
+                <?= Html::submitButton('Select', ['class' => 'btn btn-primary', 'name' => 'select-button']) ?>
             </div>
         </div>
 

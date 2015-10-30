@@ -38,14 +38,8 @@ $config = [
             ],
         ],
         'db' => require(__DIR__ . '/db.php'),
-        'lovdConnection' => [
-            'class' => '\app\models\LovdConnectionForm',
-            'host' => 'empty',
-            'database' => 'empty',
-            'username' => 'empty',
-            'password' => 'empty',
-            'isAvailable' => false,
-        ],
+        'db2' => require(__DIR__ . '/db2.php'),
+        'db3' => require(__DIR__ . '/db3.php'),
     ],
     'params' => $params,
 ];

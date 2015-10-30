@@ -91,4 +91,9 @@ class SiteController extends Controller
     {
         return $this->render('about');
     }
+
+    public function actionTweak()
+    {
+        return $this->render('tweak');
+    }
 }

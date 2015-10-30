@@ -8,7 +8,7 @@ use yii\web\Controller;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
-use app\models\LovdConnectionForm;
+use app\models\LovdConnection;
 
 class LovdConnectionController extends Controller
 {
@@ -41,10 +41,6 @@ class LovdConnectionController extends Controller
             'error' => [
                 'class' => 'yii\web\ErrorAction',
             ],
-            'captcha' => [
-                'class' => 'yii\captcha\CaptchaAction',
-                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
-            ],
         ];
     }
 
@@ -53,50 +49,23 @@ class LovdConnectionController extends Controller
         return $this->render('index');
     }
 
-    public function actionConnect()
+    public function actionSelectDatabase()
     {
-        $model = new LovdConnectionForm();
+        $dbmodel = new LovdConnection();
 
-    var_dump(Yii::$app); exit;
-        if (Yii::$app->lovdConnection->isAvailable) {
-            return $this->goHome();
+        if ($dbmodel->load(Yii::$app->request->post()) && isset($dbmodel->database_id)) {
+            return $this->render('/site/index', [
+                'dbmodel' => $dbmodel,
+            ]);
         }
 
-
-
-
-        if ($model->load(Yii::$app->request->post()) && $model->connect()) {
-            return $this->goBack();
-        }
-
-       // var_dump($model); exit;
         return $this->render('connect', [
-            'model' => $model,
+            'dbmodel' => $dbmodel,
         ]);
     }
 
-    public function actionDisconnect()
+    public function actionDeselect()
     {
-        Yii::$app->user->logout();
 
-        return $this->goHome();
-    }
-
-    public function actionContact()
-    {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
-
-            return $this->refresh();
-        }
-        return $this->render('contact', [
-            'model' => $model,
-        ]);
-    }
-
-    public function actionAbout()
-    {
-        return $this->render('about');
     }
 }

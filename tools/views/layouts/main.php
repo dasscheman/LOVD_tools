@@ -41,15 +41,14 @@ AppAsset::register($this);
             ['label' => 'About', 'url' => ['/site/about']],
             ['label' => 'Contact', 'url' => ['/site/contact']],
 
-            Yii::$app->lovdConnection->isAvailable ?
+            isset($_GET['dbmodel'])?
                 [
-                    'label' => 'Disonnect (Host: ' . Yii::$app->lovdConnection->host . ' Database: '. Yii::$app->lovdConnection->database . ')',
-                    'url' => ['/lovd-connection/disconnect'],
-                    'linkOptions' => ['data-method' => 'post']
+                    'label' => 'Deselect (' . $_GET['dbmodel']['database_id'] . ')',
+                    'url' => ['/lovd-connection/deselect'],
                 ]:
                 [
-                    'label' => 'Connect',
-                    'url' => ['/lovd-connection/connect'],
+                    'label' => 'Select',
+                    'url' => ['/lovd-connection/select-database'],
                 ],
             Yii::$app->user->isGuest ?
                 ['label' => 'Login', 'url' => ['/site/login']] :
