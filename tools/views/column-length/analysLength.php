@@ -52,11 +52,28 @@ $this->params['breadcrumbs'][] = $this->title;
                     'max_data_length',
                     'data_free',
                     'average_row_length',
-                    'calculated',
+                    [
+                        'label'=>'Calculated Total Size (bites)',
+                        'value' =>'calculated_total_size'
+                    ],
+                    [
+                        'label'=>'Calculated Varchar Size (bites)',
+                        'value' =>'calculated_varchar_size'
+                    ],
+                    [
+                        'label'=>'Calculated Varchar Size (char)',
+                        'value' =>'calculated_varchar_length'
+                    ],
+                    [
+                        'label'=>'Characters saved (char)',
+                        'value' =>'total_varchar_saved'
+                    ],
                 ],
         ]);
 
     ?>
+
+    <?php unset($model['columns']); ?>
     <?=Html::beginForm([
         '/column-length/alter-columns',
         'id' => 'analys-length-form',

@@ -13,7 +13,8 @@ use yii\helpers\ArrayHelper;
  */
 class ColumnLength extends LovdConnection
 {
-    public $table;
+    public $table = 'lovd_v3_phenotypes';
+    public $tableColumnProperty = 'lovd_v3_columns';
     public $columns;
     public $diffLength = 20;
     public $margin = 10;
@@ -109,10 +110,13 @@ class ColumnLength extends LovdConnection
         $diffData = $this->getDifColumnLength($reservedLength, $maxLength);
 
         foreach ($diffData as $key=>$record){
-            $type = 'varchar(' . $record['new_length'] . ')';
+            $type = 'VARCHAR(' . $record['new_length'] . ')';
             $column = $key;
-            $query = $this->alterColumn($column, $type);
-            $query->query();
+            $queryAlter = $this->alterColumn($column, $type);
+            $queryAlter->query();
+
+	    $queryUpdate = $this->updateColumnProperty($column, $type);
+	    $queryUpdate->query();
         }
 
         $this->disconnect();
@@ -185,16 +189,12 @@ class ColumnLength extends LovdConnection
 	if (isset($query->queryAll()[0])) {
 	    $data[$this->table] = $query->queryOne();
 	}
-        $data[$this->table]['calculated'] = $this->getTableSizeInfo()['SIZE'];
+        $data[$this->table]['calculated_total_size'] = $this->getTableSizeInfo()['SIZE'];
+        $data[$this->table]['calculated_varchar_size'] = $this->calculateVarcharSize();
+        $data[$this->table]['calculated_varchar_length'] = $this->getVarCharLength()['MAX_TOTAL_VARCHAR'];
 
         $this->disconnectInformationDb();
-	$provider = new ArrayDataProvider([
-	    'allModels' => $data,
-	    'pagination' => [
-		'pageSize' => 50,
-	    ],
-	]);
-	return $provider;
+	return $data;
     }
 
     public function getTableSizeInfo()
@@ -205,7 +205,7 @@ class ColumnLength extends LovdConnection
 	$query = $this->createCommand(
 	    "SELECT
 		SUM(DATA_TYPE)+
-		SUM(DATA_TYPE IN ('varchar', 'text', 'decimal'))+
+		SUM(DATA_TYPE IN ('text'))+
 		SUM(DATA_TYPE IN ('text'))*12+
 		SUM(DATA_TYPE IN ('tinyint'))+
 		SUM(DATA_TYPE IN ('smallint'))*2+
@@ -213,12 +213,13 @@ class ColumnLength extends LovdConnection
 		SUM(DATA_TYPE IN ('int'))*4+
 		SUM(DATA_TYPE IN ('datetime'))*8+
 		SUM(DATA_TYPE IN ('varchar'))+
-		SUM(CHARACTER_OCTET_LENGTH)+
 		SUM(DATA_TYPE IN ('decimal'))
 	    AS SIZE
 	    FROM COLUMNS
 	    WHERE TABLE_SCHEMA = '" . $db_name . "'
-	    AND TABLE_NAME  = '" . $this->table . "'");
+	    AND TABLE_NAME  = '" . $this->table . "'
+	    AND DATA_TYPE != 'varchar'
+	    AND DATA_TYPE != 'decimal'");
 
 	if (isset($query->queryAll()[0])) {
 	    $data = $query->queryOne();
@@ -226,7 +227,92 @@ class ColumnLength extends LovdConnection
 
         $this->disconnectInformationDb();
 
+	$data['SIZE'] += $this->calculateDecimalSize();
+	$data['SIZE'] += $this->calculateVarcharSize();
+
 	return $data;
+    }
+
+    public function calculateVarcharSize()
+    {
+	$db_name = $this->getDatabaseName();
+        $this->connectInformationDb();
+	$data = '';
+	$query = $this->createCommand(
+	    "SELECT
+		DATA_TYPE,
+		CHARACTER_OCTET_LENGTH
+	    FROM COLUMNS
+	    WHERE TABLE_SCHEMA = '" . $db_name . "'
+	    AND DATA_TYPE = 'varchar'
+	    AND TABLE_NAME  = '" . $this->table . "'");
+
+	if (isset($query->queryAll()[0])) {
+	    $data = $query->queryAll();
+	}
+
+        $this->disconnectInformationDb();
+
+	$varcharSize = 0;
+	foreach ($data as $item) {
+	    $varcharSize += 3+$item['CHARACTER_OCTET_LENGTH'];
+	    if($item['CHARACTER_OCTET_LENGTH']>255){
+		$varcharSize += 1;
+	    }
+	}
+	return $varcharSize;
+    }
+
+    public function calculateDecimalSize()
+    {
+	$db_name = $this->getDatabaseName();
+        $this->connectInformationDb();
+	$data = '';
+	$query = $this->createCommand(
+	    "SELECT DATA_TYPE,
+		NUMERIC_PRECISION,
+		NUMERIC_SCALE,
+		NUMERIC_PRECISION,
+		NUMERIC_SCALE
+	    FROM COLUMNS
+	    WHERE TABLE_SCHEMA = '" . $db_name . "'
+	    AND DATA_TYPE = 'decimal'
+	    AND TABLE_NAME  = '" . $this->table . "'");
+
+	if (isset($query->queryAll()[0])) {
+	    $data = $query->queryAll();
+	}
+
+        $this->disconnectInformationDb();
+	$decimalSize = 0;
+	foreach ($data as $item) {
+	    $decimalSize += 2+floor(($item['NUMERIC_PRECISION']+$item['NUMERIC_SCALE'])/9)*4+ceil(($item['NUMERIC_PRECISION']+$item['NUMERIC_SCALE'])%9)/4;
+	}
+
+	return $decimalSize;
+    }
+
+    /**
+     * get the maxcolumnlength for columns with DATA_TYPE varchar.
+     * @returns the max length of the columns for $this->table
+     **/
+    public function getVarCharLength()
+    {
+	$db_name = $this->getDatabaseName();
+
+        $this->connectInformationDb();
+	$data = '';
+	$query = $this->createCommand(
+	    "SELECT SUM(CHARACTER_MAXIMUM_LENGTH) AS MAX_TOTAL_VARCHAR
+	    FROM COLUMNS
+	    WHERE TABLE_NAME LIKE '" . $this->table . "'
+	    AND DATA_TYPE = 'varchar'
+	    AND TABLE_SCHEMA ='" . $db_name . "'");
+	if (isset($query->queryColumn()[0])) {
+	    $data = $query->queryOne();
+	}
+        $this->disconnectInformationDb();
+        return $data;
     }
 
     /**
@@ -270,16 +356,41 @@ class ColumnLength extends LovdConnection
 	return $data;
     }
 
+    public function getColumnProperty($reservedFieldLength)
+    {
+	$data = array();
+	$this->connect();
+	foreach ($reservedFieldLength as $key=>$value) {
+	    $dataTemp='';
+	    $query = $this->createCommand("SELECT id,
+					  mysql_type
+					  FROM " . $this->tableColumnProperty . "
+					  WHERE id LIKE '" . $key . "'");
+	    $dataTemp = $query->queryOne();
+	    if (isset($query->queryColumn()[0])) {
+		$dataTemp = $query->queryOne();
+		$type = 'VARCHAR(' . $value . ')';
+		if (strcmp($type, $dataTemp['mysql_type'])) {
+		    $dataTemp['Information_schema'] = $type;
+		    $data[$key] = $dataTemp;
+		}
+
+	    }
+
+	}
+
+        $this->disconnect();
+	return $data;
+    }
+
+
     public function getDataProviderFormat($data)
     {
 	$provider = array();
 	$provider = new ArrayDataProvider([
 	    'allModels' => $data,
 	    'pagination' => [
-		'pageSize' => 50,
-	    ],
-	    'sort' => [
-		'attributes' => ['column_name', 'reserved', 'max', 'dif', 'new_length', 'saved_length'],
+		'pageSize' => 100,
 	    ],
 	]);
 	return $provider;

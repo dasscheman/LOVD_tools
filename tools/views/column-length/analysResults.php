@@ -28,7 +28,18 @@ $this->params['breadcrumbs'][] = $this->title;
                     'max_data_length',
                     'data_free',
                     'average_row_length',
-                    'calculated',
+                    [
+                        'label'=>'Calculated Total Size (bites)',
+                        'value' =>'calculated_total_size'
+                    ],
+                    [
+                        'label'=>'Calculated Varchar Size (bites)',
+                        'value' =>'calculated_varchar_size'
+                    ],
+                    [
+                        'label'=>'Calculated Varchar Size (char)',
+                        'value' =>'calculated_varchar_length'
+                    ],
                 ],
         ]);
     ?>
@@ -42,7 +53,18 @@ $this->params['breadcrumbs'][] = $this->title;
                     'max_data_length',
                     'data_free',
                     'average_row_length',
-                    'calculated',
+                    [
+                        'label'=>'Calculated Total Size (bites)',
+                        'value' =>'calculated_total_size'
+                    ],
+                    [
+                        'label'=>'Calculated Varchar Size (bites)',
+                        'value' =>'calculated_varchar_size'
+                    ],
+                    [
+                        'label'=>'Calculated Varchar Size (char)',
+                        'value' =>'calculated_varchar_length'
+                    ],
                 ],
         ]);
 

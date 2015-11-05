@@ -126,7 +126,17 @@ class LovdConnection extends Model
      */
     public function alterColumn($column, $type)
     {
-        return $this->_lovdDatabaseConnection->createCommand()->alterColumn( $this->table, $column, $type);
+        return $this->_lovdDatabaseConnection->createCommand()->alterColumn($this->table, $column, $type);
+    }
+
+    /**
+     * Alter column property in table clolumns for current db connection
+     * @return sql statement.
+     */
+    public function updateColumnProperty($column, $type)
+    {
+        return $this->_lovdDatabaseConnection->createCommand(
+	    "UPDATE `" . $this->tableColumnProperty . "` SET mysql_type = '" . $type . "' WHERE id = '" . $column . "'");
     }
 
     /**
