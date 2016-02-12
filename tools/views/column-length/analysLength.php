@@ -89,6 +89,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         [ 'class' => 'yii\grid\SerialColumn' ],
                         [ 'class' => 'yii\grid\CheckboxColumn', ],
                         'column_name',
+                        'form_type',
                         'reserved',
                         'max',
                         'dif',

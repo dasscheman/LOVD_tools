@@ -84,7 +84,7 @@ class ColumnLengthController extends Controller
         // Fit the data with arrayDataProvider so the gridview understands the format.
         $diffData = $model->getDataProviderFormat($diff);
         $diffData->sort = [
-            'attributes' => ['column_name', 'reserved', 'max', 'dif', 'new_length', 'saved_length'],
+            'attributes' => ['column_name', 'form_type', 'reserved', 'max', 'dif', 'new_length', 'saved_length'],
         ];
 
         // Now get the summary data for all columns

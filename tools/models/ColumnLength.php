@@ -341,15 +341,27 @@ class ColumnLength extends LovdConnection
 		continue;
 	    }
 
-		$data[$key] =
-		    [
-			'column_name'=>$key,
-			'reserved'=>$value,
-			'max'=>$maxFieldLength[$key],
-			'dif'=>$diff,
-			'new_length'=>$new_length,
-			'saved_length'=>$saved_length,
-		    ];
+	    $form_type = '';
+	    $this->connect();
+	    $query = $this->createCommand(
+		"SELECT form_type
+		FROM " . $this->tableColumnProperty . "
+		WHERE id LIKE '" . $key . "'");
+
+	    $form_type = $query->queryColumn()[0];
+
+	    $this->disconnect();
+
+	    $data[$key] =
+		[
+		    'column_name'=>$key,
+		    'form_type'=>$form_type,
+		    'reserved'=>$value,
+		    'max'=>$maxFieldLength[$key],
+		    'dif'=>$diff,
+		    'new_length'=>$new_length,
+		    'saved_length'=>$saved_length,
+		];
 
 	}
 

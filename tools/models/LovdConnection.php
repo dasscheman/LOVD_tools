@@ -15,7 +15,7 @@ class LovdConnection extends Model
 {
     public $databases = array('db' => 'Yii2 basic',
                               'db2' => 'LOVD local',
-                              //'db3' => 'LOVD shared',
+                             // 'db3' => 'LOVD shared',
                               );
     public $database_id;
     private $_lovdDatabaseConnection;
